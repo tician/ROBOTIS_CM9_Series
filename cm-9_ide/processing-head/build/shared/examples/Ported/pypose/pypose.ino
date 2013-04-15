@@ -55,7 +55,7 @@ int seqPos;                     // step in current sequence
 
 void setup(){
 	Serial2.begin(38400);
-	Dxl.begin(DXL_BAUDRATE_NUMBER);
+	Dxl.begin(1);
 
 	pinMode(BOARD_LED_PIN, OUTPUT);
 
