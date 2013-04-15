@@ -27,10 +27,10 @@ BioloidController bioloid;
 #define ARB_PLAY_SEQ    10
 #define ARB_LOOP_SEQ    11
 #define ARB_TEST        25
-#define MAX_SERVOS		30
+#define MAX_SERVOS        30
 
-#define INST_READ           0x02
-#define INST_WRITE          0x03
+//#define INST_READ           0x02
+//#define INST_WRITE          0x03
 
 int mode = 0;                   // where we are in the frame
 
@@ -54,23 +54,27 @@ sp_trans_t sequence[50];        // sequence
 int seqPos;                     // step in current sequence
 
 void setup(){
-	Serial2.begin(38400);
-	Dxl.begin(1);
+    Serial2.begin(38400);
+    SerialUSB.begin();
+    Dxl.begin(1);
+	bioloid.setup(MAX_SERVOS);
 
-	pinMode(BOARD_LED_PIN, OUTPUT);
+    pinMode(BOARD_LED_PIN, OUTPUT);
 
-	// Waits 5 seconds for you to open the console (open too quickly after
-	//   downloading new code, and you will get errors
-	delay(5000);
-	Serial2.print("Send any value to continue...\n");
-	while(!Serial2.available())
-	{
-		delay(1000);
-		digitalWrite(BOARD_LED_PIN, LOW);
-		Serial2.print("Send any value to continue...\n");
-		delay(1000);
-		digitalWrite(BOARD_LED_PIN, HIGH);
-	}
+
+    // Waits 5 seconds for you to open the console (open too quickly after
+    //   downloading new code, and you will get errors
+    delay(5000);
+    SerialUSB.print("Send any value to continue...\n");
+    while(!SerialUSB.available())
+    {
+        delay(1000);
+        digitalWrite(BOARD_LED_PIN, LOW);
+        SerialUSB.print("Send any value to continue...\n");
+        delay(1000);
+        digitalWrite(BOARD_LED_PIN, HIGH);
+    }
+
 }
 
 /* 
@@ -85,7 +89,7 @@ void setup(){
  * Play Seq = B, no params
  * Loop Seq = C, 
  */
-
+    
 void loop(){
     int i;
     
@@ -94,29 +98,47 @@ void loop(){
         // We need to 0xFF at start of packet
         if(mode == 0){         // start of new packet
             if(Serial2.read() == 0xff){
+                SerialUSB.print("\n0xff,");
                 mode = 2;
 //                digitalWrite(0,HIGH-digitalRead(0));
             }
-        //}else if(mode == 1){   // another start byte
-        //    if(Serial.read() == 0xff)
-        //        mode = 2;
-        //    else
-        //        mode = 0;
+//        }else if(mode == 1){   // another start byte
+//            if(Serial2.read() == 0xff){
+//                SerialUSB.print("0xff,");
+//                mode = 2;
+//            }
+            else{
+                SerialUSB.print(";blah;\n\n");
+                mode = 0;
+            }
         }else if(mode == 2){   // next byte is index of servo
-            id = Serial2.read();    
-            if(id != 0xff)
+            id = Serial2.read();
+            if(id != 0xff){
+                SerialUSB.print(id);
+                SerialUSB.print(",");
+
                 mode = 3;
+            }
+            else{
+                SerialUSB.print("0xff,");
+            }
         }else if(mode == 3){   // next byte is length
             length = Serial2.read();
+            SerialUSB.print(length);
+            SerialUSB.print(",");
             checksum = id + length;
             mode = 4;
         }else if(mode == 4){   // next byte is instruction
             ins = Serial2.read();
+            SerialUSB.print(ins);
+            SerialUSB.print(",");
             checksum += ins;
             iter = 0;
             mode = 5;
         }else if(mode == 5){   // read data in 
             params[iter] = Serial2.read();
+            SerialUSB.print(params[iter]);
+            SerialUSB.print(",");
             checksum += (int) params[iter];
             iter++;
             if(iter + 1 == length){  // we've read params & checksum
@@ -129,6 +151,13 @@ void loop(){
                     Serial2.write(2);
                     Serial2.write(64);
                     Serial2.write(255-((66+id)%256));
+
+                    SerialUSB.print("\n\n0xff,");
+                    SerialUSB.print("0xff,");
+                    SerialUSB.print(id);
+                    SerialUSB.print(",2,");
+                    SerialUSB.print("64,");
+                    SerialUSB.println(255-((66+id)%256));
                 }else{
                     if(id == 253){
                         // return a packet: FF FF id Len Err params=None check
@@ -138,6 +167,13 @@ void loop(){
                         Serial2.write(2);
                         Serial2.write((unsigned char)0);
                         Serial2.write(255-((2+id)%256));
+                        
+                        SerialUSB.print("\n\n0xff,");
+                        SerialUSB.print("0xff,");
+                        SerialUSB.print(id);
+                        SerialUSB.print(",2,");
+                        SerialUSB.print("0,");
+                        SerialUSB.println(255-((2+id)%256));
                         // special ArbotiX instructions
                         // Pose Size = 7, followed by single param: size of pose
                         // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size+1)
@@ -152,8 +188,8 @@ void loop(){
                             Serial2.print("New Pose:");
                             for(i=0; i<bioloid.poseSize; i++){
                                 poses[params[0]][i] = params[(2*i)+1]+(params[(2*i)+2]<<8); 
-                                //Serial.print(poses[params[0]][i]);
-                                //Serial.print(",");     
+                                Serial2.print(poses[params[0]][i]);
+                                Serial2.print(",");     
                             } 
                             Serial2.println("");
                         }else if(ins == ARB_LOAD_SEQ){
@@ -161,10 +197,10 @@ void loop(){
                             for(i=0;i<(length-2)/3;i++){
                                 sequence[i].pose = params[(i*3)];
                                 sequence[i].time = params[(i*3)+1] + (params[(i*3)+2]<<8);
-                                //Serial.print("New Transition:");
-                                //Serial.print((int)sequence[i].pose);
-                                //Serial.print(" in ");
-                                //Serial.println(sequence[i].time);      
+                                Serial2.print("New Transition:");
+                                Serial2.print((int)sequence[i].pose);
+                                Serial2.print(" in ");
+                                Serial2.println(sequence[i].time);      
                             }
                         }else if(ins == ARB_PLAY_SEQ){
                             seqPos = 0;
@@ -172,7 +208,10 @@ void loop(){
                                 int i;
                                 int p = sequence[seqPos].pose;
                                 // are we HALT?
-                                if(Serial2.read() == 'H') return;
+                                if(Serial2.read() == 'H'){
+                                    SerialUSB.println("H");
+                                    return;
+                                }
                                 // load pose
                                 for(i=0; i<bioloid.poseSize; i++){
                                     bioloid.setNextPose(i+1,poses[p][i]);
@@ -191,7 +230,10 @@ void loop(){
                                     int i;
                                     int p = sequence[seqPos].pose;
                                     // are we HALT?
-                                    if(Serial2.read() == 'H') return;
+                                    if(Serial2.read() == 'H'){
+                                        SerialUSB.println("H");
+                                        return;
+                                    }
                                     // load pose
                                     for(i=0; i<bioloid.poseSize; i++){
                                         bioloid.setNextPose(i+1,poses[p][i]);
@@ -238,25 +280,68 @@ void loop(){
                                 digitalWrite(i,LOW);
                                 digitalWrite(31-i,LOW);
                             }
-*/                        }   
+*/                      }   
                     }else{
                         int i;
                         // pass thru
                        if(ins == INST_READ){
                             int i;
-                            Dxl.readByte(id, params[0]);//, params[1]);
-                            // return a packet: FF FF id Len Err params check
-                            if(Dxl.getRxPacketLength() > 0){
-                            for(i=0;i<Dxl.getRxPacketLength()+4;i++)
-                                Serial2.write(Dxl.getRxPacketParameter(i-5));	// index offset by PARAMETER==5, so subtract 5 to get full packet
+                            if (params[1]==1)
+                                Dxl.readByte(id, params[0]);//, params[1]);
+                            else if (params[1]==2)
+                                Dxl.readWord(id, params[0]);
+                            else{
+                                Dxl.setTxPacketId(id);
+                                Dxl.setTxPacketLength(length);
+                                Dxl.setTxPacketInstruction(ins);
+                                Dxl.setTxPacketParameter(0, params[0]);
+                                Dxl.setTxPacketParameter(1, params[1]);
+								Dxl.txrxPacket();
                             }
+                            // return a packet: FF FF id Len Err params check
+							int status = Dxl.getResult();
+							if (status == COMM_RXSUCCESS){
+								if(Dxl.getRxPacketLength() > 0){
+									SerialUSB.print("\n  RX:");
+									for(i=0;i<Dxl.getRxPacketLength()+4;i++){
+									// index offset by PARAMETER==5, so subtract 5 to get full packet
+										int temp_data = Dxl.getRxPacketParameter(i-5);
+										Serial2.write(temp_data);
+										SerialUSB.print(temp_data);
+										SerialUSB.print(",");
+									}
+								}
+                            }
+							else{
+								SerialUSB.print("\n  RX Failed: ");
+								SerialUSB.print(status);
+							}
                         }else if(ins == INST_WRITE){
-                            if(length == 4){
+							if(length == 4){
                                 Dxl.writeByte(id, params[0], params[1]);
                             }else{
                                 int x = params[1] + (params[2]<<8);
                                 Dxl.writeWord(id, params[0], x);
                             }
+							
+							int status = Dxl.getResult();
+							if (status == COMM_RXSUCCESS){
+								if(Dxl.getRxPacketLength() > 0){
+									SerialUSB.print("\n  RX:");
+									for(i=0;i<Dxl.getRxPacketLength()+4;i++){
+									// index offset by PARAMETER==5, so subtract 5 to get full packet
+										int temp_data = Dxl.getRxPacketParameter(i-5);
+										Serial2.write(temp_data);
+										SerialUSB.print(temp_data);
+										SerialUSB.print(",");
+									}
+								}
+                            }
+							else{
+								SerialUSB.print("\n  RX Failed: ");
+								SerialUSB.print(status);
+							}
+							/*
                             // return a packet: FF FF id Len Err params check
                             Serial2.write(0xff);
                             Serial2.write(0xff);
@@ -264,6 +349,14 @@ void loop(){
                             Serial2.write(2);
                             Serial2.write((unsigned char)0);
                             Serial2.write(255-((2+id)%256));
+
+                            SerialUSB.print("\n\n0xff,");
+                            SerialUSB.print("0xff,");
+                            SerialUSB.print(id);
+                            SerialUSB.print(",2,");
+                            SerialUSB.print("0,");
+                            SerialUSB.println(255-((2+id)%256));
+							*/
                         }
                     }
                 }
