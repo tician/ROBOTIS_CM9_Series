@@ -33,6 +33,8 @@
 #ifndef _WIRISH_H_
 #define _WIRISH_H_
 
+#include <stdlib.h>
+
 #include "libpandora.h"
 
 #include "wirish_types.h"

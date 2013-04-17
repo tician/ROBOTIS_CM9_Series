@@ -25,7 +25,7 @@
 
 #include "dxl_devices.h"
 #include "stdlib.h"
-#include <Pandora.h>
+#include "Pandora.h"
 
 /* poses (avr):
  *  PROGMEM prog_uint16_t name[] = {4,512,512,482,542}; // first number is # of servos
