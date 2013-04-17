@@ -1,13 +1,22 @@
-#include "stdint.h"
+#include <stdint.h>
 //#include "CM9_BC.h"
 #include "bplf.h"
 
 BioloidController bioloid;
 
-uint16_t servo_ids[] = {12,7,8,9,10,11,12,13,14,15,16,17,18};
+//uint16_t servo_ids[] = {12,7,8,9,10,11,12,13,14,15,16,17,18};
+uint16_t servo_ids*;
 
 void setup()
 {
+	servo_ids = malloc((12+1) * sizeof(uint16_t));
+	servo_ids[0] = 12;
+	int iter;
+	for (iter=0; iter<12; iter++)
+	{
+		servo_ids[iter+1] = iter+7;
+	}
+
 	Dxl.begin(1);
 	SerialUSB.begin();
 

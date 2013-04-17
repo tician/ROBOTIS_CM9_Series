@@ -19,6 +19,9 @@
 
 #include "CM9_BC.h"
 
+// Using USB debug output requires CM-900 be connected to PC via USB
+//#define USB_DEBUG_OUTPUT
+
 BioloidController bioloid;
 
 #define ARB_SIZE_POSE   7  // also initializes
@@ -55,13 +58,16 @@ int seqPos;                     // step in current sequence
 
 void setup(){
     Serial2.begin(38400);
+#ifdef USB_DEBUG_OUTPUT
     SerialUSB.begin();
+#endif
     Dxl.begin(1);
 	bioloid.setup(MAX_SERVOS);
 
     pinMode(BOARD_LED_PIN, OUTPUT);
 
 
+#ifdef USB_DEBUG_OUTPUT
     // Waits 5 seconds for you to open the console (open too quickly after
     //   downloading new code, and you will get errors
     delay(5000);
@@ -74,6 +80,7 @@ void setup(){
         delay(1000);
         digitalWrite(BOARD_LED_PIN, HIGH);
     }
+#endif
 
 }
 
@@ -98,47 +105,62 @@ void loop(){
         // We need to 0xFF at start of packet
         if(mode == 0){         // start of new packet
             if(Serial2.read() == 0xff){
+#ifdef USB_DEBUG_OUTPUT
                 SerialUSB.print("\n0xff,");
+#endif
                 mode = 2;
 //                digitalWrite(0,HIGH-digitalRead(0));
             }
 //        }else if(mode == 1){   // another start byte
 //            if(Serial2.read() == 0xff){
+#ifdef USB_DEBUG_OUTPUT
 //                SerialUSB.print("0xff,");
+#endif
 //                mode = 2;
 //            }
             else{
+#ifdef USB_DEBUG_OUTPUT
                 SerialUSB.print(";blah;\n\n");
+#endif
                 mode = 0;
             }
         }else if(mode == 2){   // next byte is index of servo
             id = Serial2.read();
             if(id != 0xff){
+#ifdef USB_DEBUG_OUTPUT
                 SerialUSB.print(id);
                 SerialUSB.print(",");
-
+#endif
                 mode = 3;
             }
             else{
+#ifdef USB_DEBUG_OUTPUT
                 SerialUSB.print("0xff,");
+#endif
             }
         }else if(mode == 3){   // next byte is length
             length = Serial2.read();
+#ifdef USB_DEBUG_OUTPUT
             SerialUSB.print(length);
             SerialUSB.print(",");
+#endif
             checksum = id + length;
             mode = 4;
         }else if(mode == 4){   // next byte is instruction
             ins = Serial2.read();
+#ifdef USB_DEBUG_OUTPUT
             SerialUSB.print(ins);
             SerialUSB.print(",");
+#endif
             checksum += ins;
             iter = 0;
             mode = 5;
         }else if(mode == 5){   // read data in 
             params[iter] = Serial2.read();
+#ifdef USB_DEBUG_OUTPUT
             SerialUSB.print(params[iter]);
             SerialUSB.print(",");
+#endif
             checksum += (int) params[iter];
             iter++;
             if(iter + 1 == length){  // we've read params & checksum
@@ -152,12 +174,14 @@ void loop(){
                     Serial2.write(64);
                     Serial2.write(255-((66+id)%256));
 
+#ifdef USB_DEBUG_OUTPUT
                     SerialUSB.print("\n\n0xff,");
                     SerialUSB.print("0xff,");
                     SerialUSB.print(id);
                     SerialUSB.print(",2,");
                     SerialUSB.print("64,");
                     SerialUSB.println(255-((66+id)%256));
+#endif
                 }else{
                     if(id == 253){
                         // return a packet: FF FF id Len Err params=None check
@@ -168,12 +192,14 @@ void loop(){
                         Serial2.write((unsigned char)0);
                         Serial2.write(255-((2+id)%256));
                         
+#ifdef USB_DEBUG_OUTPUT
                         SerialUSB.print("\n\n0xff,");
                         SerialUSB.print("0xff,");
                         SerialUSB.print(id);
                         SerialUSB.print(",2,");
                         SerialUSB.print("0,");
                         SerialUSB.println(255-((2+id)%256));
+#endif
                         // special ArbotiX instructions
                         // Pose Size = 7, followed by single param: size of pose
                         // Load Pose = 8, followed by index, then pose positions (# of param = 2*pose_size+1)
@@ -209,7 +235,9 @@ void loop(){
                                 int p = sequence[seqPos].pose;
                                 // are we HALT?
                                 if(Serial2.read() == 'H'){
+#ifdef USB_DEBUG_OUTPUT
                                     SerialUSB.println("H");
+#endif
                                     return;
                                 }
                                 // load pose
@@ -231,7 +259,9 @@ void loop(){
                                     int p = sequence[seqPos].pose;
                                     // are we HALT?
                                     if(Serial2.read() == 'H'){
+#ifdef USB_DEBUG_OUTPUT
                                         SerialUSB.println("H");
+#endif
                                         return;
                                     }
                                     // load pose
@@ -302,19 +332,25 @@ void loop(){
 							int status = Dxl.getResult();
 							if (status == COMM_RXSUCCESS){
 								if(Dxl.getRxPacketLength() > 0){
+#ifdef USB_DEBUG_OUTPUT
 									SerialUSB.print("\n  RX:");
+#endif
 									for(i=0;i<Dxl.getRxPacketLength()+4;i++){
 									// index offset by PARAMETER==5, so subtract 5 to get full packet
 										int temp_data = Dxl.getRxPacketParameter(i-5);
 										Serial2.write(temp_data);
+#ifdef USB_DEBUG_OUTPUT
 										SerialUSB.print(temp_data);
 										SerialUSB.print(",");
+#endif
 									}
 								}
                             }
 							else{
+#ifdef USB_DEBUG_OUTPUT
 								SerialUSB.print("\n  RX Failed: ");
 								SerialUSB.print(status);
+#endif
 							}
                         }else if(ins == INST_WRITE){
 							if(length == 4){
@@ -327,19 +363,25 @@ void loop(){
 							int status = Dxl.getResult();
 							if (status == COMM_RXSUCCESS){
 								if(Dxl.getRxPacketLength() > 0){
+#ifdef USB_DEBUG_OUTPUT
 									SerialUSB.print("\n  RX:");
+#endif
 									for(i=0;i<Dxl.getRxPacketLength()+4;i++){
 									// index offset by PARAMETER==5, so subtract 5 to get full packet
 										int temp_data = Dxl.getRxPacketParameter(i-5);
 										Serial2.write(temp_data);
+#ifdef USB_DEBUG_OUTPUT
 										SerialUSB.print(temp_data);
 										SerialUSB.print(",");
+#endif
 									}
 								}
                             }
 							else{
+#ifdef USB_DEBUG_OUTPUT
 								SerialUSB.print("\n  RX Failed: ");
 								SerialUSB.print(status);
+#endif
 							}
 							/*
                             // return a packet: FF FF id Len Err params check
@@ -350,12 +392,14 @@ void loop(){
                             Serial2.write((unsigned char)0);
                             Serial2.write(255-((2+id)%256));
 
+#ifdef USB_DEBUG_OUTPUT
                             SerialUSB.print("\n\n0xff,");
                             SerialUSB.print("0xff,");
                             SerialUSB.print(id);
                             SerialUSB.print(",2,");
                             SerialUSB.print("0,");
                             SerialUSB.println(255-((2+id)%256));
+#endif
 							*/
                         }
                     }
