@@ -15,7 +15,7 @@ void setup()
 	// Setup Dynamixel bus, USB, and RC-100 interfaces
 	Dxl.begin(1);
 	Dxl.setLibNumberTxRxAttempts(3);
-	Dxl.writeWord(BROADCAST_ID, P_MAX_TORQUE_L, 300);
+	Dxl.writeWord(BROADCAST_ID, P_MAX_TORQUE_L, 1000);
 	
 	SerialUSB.begin();
 	Boomer.begin();
@@ -51,6 +51,8 @@ void setup()
 void loop()
 {
 	unsigned int heartbeat = millis();
+//	int LED_state = 0;
+//	int LED_rate = 0;
 
 /// Set bot to an initial/ready position
 	SerialUSB.print("loop() started. Going to Ready Position...");
@@ -62,9 +64,11 @@ void loop()
 		delay(1);
 		BioCon.Play();
 
+		digitalWrite(BOARD_LED_PIN, HIGH);	// LED_STAT off
 		if ((millis()-heartbeat)>200)
 		{
 			heartbeat = 0;
+			digitalWrite(BOARD_LED_PIN, LOW);	// LED_STAT on
 			SerialUSB.print(".");
 		}
 
@@ -136,11 +140,15 @@ void loop()
 		{
 			// Defend Left
 			BioCon.MotionPage(48);	// HelloRobo_D_Left_48
+			// Left Shoot Left Foot
+//			BioCon.MotionPage(39);	// HelloRobo_L_Shoot_39
 		}
 		else if (rang == RC100_BTN_4)
 		{
 			// Defend Right
 			BioCon.MotionPage(46);	// HelloRobo_D_Right_46
+			// Right Shoot Right Foot
+//			BioCon.MotionPage(38);	// HelloRobo_R_Shoot_38
 		}
 		else if (rang > 0)
 		{
@@ -149,10 +157,27 @@ void loop()
 		}
 
 
-		
-		if ((millis()-heartbeat)>200)
+		digitalWrite(BOARD_LED_PIN, HIGH);	// LED_STAT off
+		if ((millis()-heartbeat)>500)
 		{
 			heartbeat = millis();
+			digitalWrite(BOARD_LED_PIN, LOW);	// LED_STAT on
+/*
+			unsigned int sysVolt = Dxl.readByte(18, P_PRESENT_VOLTAGE);
+			if (sysVolt < 107)
+				LED_rate = 1;
+			else if (sysVolt < 105)
+				LED_rate = 2;
+			else if (sysVolt < 103)
+				LED_rate = 3;
+			else if (sysVolt < 101)
+				LED_rate = 4;
+			
+			if (LED_rate==1)
+				if (LED_state<
+*/
+
+/*
 			SerialUSB.print(".");
 
 			if (BioCon.MotionStatus())
@@ -163,6 +188,7 @@ void loop()
 					SerialUSB.println(BioCon.MotionPage());
 				}
 			}
+*/
 		}
 
 /// DO NOT REMOVE ME!!!

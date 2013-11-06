@@ -219,8 +219,8 @@ public class ArmCompiler extends Compiler {
     // Compile assembly files
     for (File file : findFilesInPath(sourcePath, "S", recurse)) { //[ROBOTIS] changed "S" -> "s" to compile startup assembly code
       //System.out.println("Count = "+i++);
-      if(verboseOut != true)
-    	 // System.out.print(".");
+//      if(verboseOut != true)
+//    	  System.out.print(".");
       execAsynchronously(getCommandCompilerS(includePaths,
                                              file.getAbsolutePath(),
                                              buildPath,
@@ -231,10 +231,10 @@ public class ArmCompiler extends Compiler {
     	sketch.setCompilingProgress(20);
     // Compile C files
     for (File file : findFilesInPath(sourcePath, "c", recurse)) {
-      //System.out.println("[ArmCompiler]compileFiles() file name : "+file);
+      System.out.println("[ArmCompiler]compileFiles() file name : "+file);
     	//System.out.println("Count = "+i++);
-      if(verboseOut != true)
-    	  //System.out.print(".");
+//      if(verboseOut != true)
+//    	  System.out.print(".");
       execAsynchronously(getCommandCompilerC(includePaths,
                                              file.getAbsolutePath(),
                                              buildPath,
@@ -246,8 +246,8 @@ public class ArmCompiler extends Compiler {
     // Compile C++ files
     for (File file : findFilesInPath(sourcePath, "cpp", recurse)) {
     	//System.out.println("Count = "+i++);
-      if(verboseOut != true)
-      	  //System.out.print(".");
+//      if(verboseOut != true)
+//      	  System.out.print(".");
       execAsynchronously(getCommandCompilerCPP(includePaths,
                                                file.getAbsolutePath(),
                                                buildPath,
@@ -361,6 +361,7 @@ public class ArmCompiler extends Compiler {
         "-L" + corePath.getAbsolutePath(),
         "-mcpu=cortex-m3",
         "-mthumb",
+//        "-pedantic",
         "-Xlinker",
         "--gc-sections",/*
         "--print-gc-sections",//[ROBOTIS] 2013-94-22 Removed
@@ -490,6 +491,7 @@ public class ArmCompiler extends Compiler {
         "-mcpu=cortex-m3",
         "-march=armv7-m",
         "-mthumb",
+//        "-pedantic",
         "-DBOARD_" + boardPrefs.get("build.board"),
         "-DMCU_" + boardPrefs.get("build.mcu"),
         "-D" + boardPrefs.get("build.density"),
@@ -526,6 +528,7 @@ public class ArmCompiler extends Compiler {
         "-mcpu=cortex-m3",
         "-mthumb",
         "-march=armv7-m",
+//        "-pedantic",
         "-nostdlib",
         "-ffunction-sections",
         "-fdata-sections",
@@ -573,6 +576,7 @@ public class ArmCompiler extends Compiler {
         "-mcpu=cortex-m3",
         "-mthumb",
         "-march=armv7-m",
+//        "-pedantic",
         "-nostdlib",
         "-ffunction-sections",
         "-fdata-sections",
@@ -626,7 +630,7 @@ public class ArmCompiler extends Compiler {
     }
 
     // ignore cautions
-    if (s.indexOf("warning") != -1) return;
+//    if (s.indexOf("warning") != -1) return;
 
     // ignore this line; the real error is on the next one
     if (s.indexOf("In file included from") != -1) return;
@@ -737,7 +741,7 @@ public class ArmCompiler extends Compiler {
         //editor.error(exception);
 
       } else {
-        System.err.println("i suck: " + s);
+        System.err.println("i suck: " + s); // I'll say
       }
 
     } else {
